@@ -18,6 +18,8 @@ These are its arguments. You can change 'em however it pleases you.
 - max_damage_100 <- The maximum amount of dmg it can deal at 100%. | Speed = Rocket Speed * 0.6 | Fluctuation = 10% of the max damage
 ```
 
+https://youtu.be/x2La9ud_KRw Here is a video if you're interested to see how it works first
+
 Tested it on Nosoop's [Custom Weapon X](https://github.com/nosoop/SM-TFCustomWeaponsX) and it works without any problems.
 
 This plugin uses Nosoop's [Ninja](https://github.com/nosoop/NinjaBuild-SMPlugin) template. Easy to organize everything and build releases. I'd recommend to check it out.
