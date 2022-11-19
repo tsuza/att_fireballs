@@ -21,11 +21,11 @@
 #define PLUGIN_URL          "https://alliedmods.net"
 
 public Plugin myinfo = {
-    name        =   PLUGIN_NAME,
-    author      =   PLUGIN_AUTHOR,
-    description =   PLUGIN_DESCRIPTION,
-    version     =   PLUGIN_VERSION,
-    url         =   PLUGIN_URL
+	name        =   PLUGIN_NAME,
+	author      =   PLUGIN_AUTHOR,
+	description =   PLUGIN_DESCRIPTION,
+	version     =   PLUGIN_VERSION,
+	url         =   PLUGIN_URL
 };
 
 // ||──────────────────────────────────────────────────────────────────────────||
@@ -34,71 +34,71 @@ public Plugin myinfo = {
 
 enum SpellStrengthType
 {
-    SpellStrength_None = -1,
-    SpellStrength_25 = 0,
-    SpellStrength_50,
-    SpellStrength_75,
-    SpellStrength_100
+	SpellStrength_None = -1,
+	SpellStrength_25 = 0,
+	SpellStrength_50,
+	SpellStrength_75,
+	SpellStrength_100
 };
 
 enum struct weapon_t
 {
-    float fRage;
-    float fPerc;
+	float fRage;
+	float fPerc;
 
-    float fMaxRage;
+	float fMaxRage;
 
-    float fDamage25Perc;
-    float fDamage50Perc;
-    float fDamage75Perc;
-    float fDamage100Perc;
+	float fDamage25Perc;
+	float fDamage50Perc;
+	float fDamage75Perc;
+	float fDamage100Perc;
 
-    void Init(char[] sAttribute)
-    {
-        this.fMaxRage       =   ReadFloatVar(sAttribute, "max_rage",        1000.0);
-        this.fDamage25Perc  =   ReadFloatVar(sAttribute, "max_damage_25%",  500.0);
-        this.fDamage50Perc  =   ReadFloatVar(sAttribute, "max_damage_50%",  1000.0);
-        this.fDamage75Perc  =   ReadFloatVar(sAttribute, "max_damage_75%",  1500.0);
-        this.fDamage100Perc =   ReadFloatVar(sAttribute, "max_damage_100%", 2000.0);
+	void Init(char[] sAttribute)
+	{
+		this.fMaxRage       =   ReadFloatVar(sAttribute, "max_rage",        1000.0);
+		this.fDamage25Perc  =   ReadFloatVar(sAttribute, "max_damage_25%",  500.0);
+		this.fDamage50Perc  =   ReadFloatVar(sAttribute, "max_damage_50%",  1000.0);
+		this.fDamage75Perc  =   ReadFloatVar(sAttribute, "max_damage_75%",  1500.0);
+		this.fDamage100Perc =   ReadFloatVar(sAttribute, "max_damage_100%", 2000.0);
 
-        return;
-    }
+		return;
+	}
 
-    void Destroy()
-    {
-        this.fRage          =   0.0;
-        this.fPerc          =   0.0;
-        this.fMaxRage       =   0.0;
-        this.fDamage25Perc  =   0.0;
-        this.fDamage50Perc  =   0.0;
-        this.fDamage75Perc  =   0.0;
-        this.fDamage100Perc =   0.0;
+	void Destroy()
+	{
+		this.fRage          =   0.0;
+		this.fPerc          =   0.0;
+		this.fMaxRage       =   0.0;
+		this.fDamage25Perc  =   0.0;
+		this.fDamage50Perc  =   0.0;
+		this.fDamage75Perc  =   0.0;
+		this.fDamage100Perc =   0.0;
 
-        return;
-    }
+		return;
+	}
 
-    float CalculatePercentage()
-    {
-        return 100.0 - ((FloatAbs(this.fMaxRage - this.fRage) / this.fMaxRage) * 100.0);
-    }
+	float CalculatePercentage()
+	{
+		return 100.0 - ((FloatAbs(this.fMaxRage - this.fRage) / this.fMaxRage) * 100.0);
+	}
 }
 
 weapon_t Weapon[2048];
 
 enum struct spell_t 
 {
-    int iWeaponID;
+	int iWeaponID;
 
-    bool bInternalSpell;
+	bool bInternalSpell;
 
-    SpellStrengthType Strength;
+	SpellStrengthType Strength;
 
-    void Destroy()
-    {
-        this.iWeaponID = 0;
-        this.bInternalSpell = false;
-        this.Strength = SpellStrength_None;
-    }
+	void Destroy()
+	{
+		this.iWeaponID = 0;
+		this.bInternalSpell = false;
+		this.Strength = SpellStrength_None;
+	}
 }
 
 spell_t SpellEntities[2048];
@@ -106,65 +106,42 @@ spell_t SpellEntities[2048];
 // If you want to change, add or remove sounds, just go ahead. No need to change the code since it uses sizeof.
 static const char sDeniedSounds[][] =
 {
-    "replay/record_fail.wav"
+	"replay/record_fail.wav"
 };
-
-// Handle hDoAnimation;
-// Handle g_hSDKSendWeaponAnim;
 
 // ||──────────────────────────────────────────────────────────────────────────||
 // ||                               SOURCEMOD API                              ||
 // ||──────────────────────────────────────────────────────────────────────────||
 
 public void OnPluginStart() 
-{   
-    //GameData Config = new GameData("tf2.attribute_support");
+{
+	HookEvent("post_inventory_application", Event_OnPostInventoryApplication);
 
-    //if(!Config)
-    //    SetFailState("Failed to load gamedata (tf2.doanimation).");
-
-    /*
-    StartPrepSDKCall(SDKCall_Player);
-    PrepSDKCall_SetFromConf(Config, SDKConf_Signature, "CTFPlayer::DoAnimationEvent");
-    PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);
-    PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);
-    hDoAnimation = EndPrepSDKCall();
-
-    delete Config;
-    */
-
-    //StartPrepSDKCall(SDKCall_Entity);
-    //PrepSDKCall_SetFromConf(Config, SDKConf_Virtual, "CTFWeaponBase::SendWeaponAnim()");
-    //PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);
-    //g_hSDKSendWeaponAnim = EndPrepSDKCall();
-
-    HookEvent("post_inventory_application", Event_OnPostInventoryApplication);
-
-    // In case of late load.
-    for(int iClient = 1; iClient <= MaxClients; iClient++)
-    {
-        if(IsClientInGame(iClient))
-            OnClientPutInServer(iClient);
-    }
-    
-    return;
+	// In case of late load.
+	for(int iClient = 1; iClient <= MaxClients; iClient++)
+	{
+		if(IsClientInGame(iClient))
+			OnClientPutInServer(iClient);
+	}
+	
+	return;
 }
 
 public void OnMapStart()
 {
-    for(int i = 0; i < sizeof(sDeniedSounds); i++)
-    {
-        PrecacheSound(sDeniedSounds[i], true);
-    }
+	for(int i = 0; i < sizeof(sDeniedSounds); i++)
+	{
+		PrecacheSound(sDeniedSounds[i], true);
+	}
 }
 
 public void OnClientPutInServer(int iClient)
 {
-    SDKHook(iClient, SDKHook_OnTakeDamageAlivePost, OnTakeDamageAlivePost);
-    SDKHook(iClient, SDKHook_OnTakeDamageAlive, OnTakeDamageAlive);
-    SDKHook(iClient, SDKHook_WeaponEquipPost,   OnWeaponEquipPost);
+	SDKHook(iClient, SDKHook_OnTakeDamageAlivePost, OnTakeDamageAlivePost);
+	SDKHook(iClient, SDKHook_OnTakeDamageAlive, OnTakeDamageAlive);
+	SDKHook(iClient, SDKHook_WeaponEquipPost,   OnWeaponEquipPost);
 
-    return;
+	return;
 }
 
 // ||──────────────────────────────────────────────────────────────────────────||
@@ -173,149 +150,145 @@ public void OnClientPutInServer(int iClient)
 
 public void OnEntityDestroyed(int iEntity)
 {
-    if(iEntity < 0 || iEntity > 2048)
-        iEntity = EntRefToEntIndex(iEntity);
+	if(iEntity < 0 || iEntity > 2048)
+		iEntity = EntRefToEntIndex(iEntity);
 
-    if(iEntity < 0 || iEntity > 2048)
-        return;
+	if(iEntity < 0 || iEntity > 2048)
+		return;
 
-    RequestFrame(Frame_DeleteEntity, iEntity);
+	RequestFrame(Frame_DeleteEntity, iEntity);
 
-    return;
+	return;
 }
 
 public void Frame_DeleteEntity(int iEntity)
 {
-    SpellEntities[iEntity].Destroy();
-    Weapon[iEntity].Destroy();
+	SpellEntities[iEntity].Destroy();
+	Weapon[iEntity].Destroy();
 
-    return;
+	return;
 }
 
 public void OnWeaponEquipPost(int iClient, int iWeapon)
 {
-    char sAttributes[140];
-    if(!TF2CustAttr_GetString(iWeapon, "fire wizard spells rage", sAttributes, sizeof(sAttributes)))
-        return;
+	char sAttributes[140];
+	if(!TF2CustAttr_GetString(iWeapon, "fire wizard spells rage", sAttributes, sizeof(sAttributes)))
+		return;
 
-    Weapon[iWeapon].Init(sAttributes);
+	Weapon[iWeapon].Init(sAttributes);
 
-    return;
+	return;
 }
 
 public void Event_OnPostInventoryApplication(Event event, const char[] name, bool bDontBroadcast)
 {
-    int iClient = GetClientOfUserId(event.GetInt("userid"));
+	int iClient = GetClientOfUserId(event.GetInt("userid"));
 
-    if(!IsValidClient(iClient))
-        return;
+	if(!IsValidClient(iClient))
+		return;
 
-    for(eTF2LoadoutSlot eSlot = TF2LoadoutSlot_Primary; eSlot < TF2LoadoutSlot_Misc3; eSlot++)
-    {
-        int iWeapon = TF2_GetPlayerLoadoutSlot(iClient, eSlot);
+	for(eTF2LoadoutSlot eSlot = TF2LoadoutSlot_Primary; eSlot < TF2LoadoutSlot_Misc3; eSlot++)
+	{
+		int iWeapon = TF2_GetPlayerLoadoutSlot(iClient, eSlot);
 
-        if(!IsValidEntity(iWeapon))
-            continue;
+		if(!IsValidEntity(iWeapon))
+			continue;
 
-        char sAttributes[140];
-        if(!TF2CustAttr_GetString(iWeapon, "fire wizard spells rage", sAttributes, sizeof(sAttributes)))
-            continue;
+		char sAttributes[140];
+		if(!TF2CustAttr_GetString(iWeapon, "fire wizard spells rage", sAttributes, sizeof(sAttributes)))
+			continue;
 
-        Weapon[iWeapon].Init(sAttributes);
-    }
+		Weapon[iWeapon].Init(sAttributes);
+	}
 
-    return;
+	return;
 }
 
 public void OnPlayerRunCmdPost(int iClient, int iButtons)
 {
-    if(!(iButtons & IN_ATTACK3))
-        return;
+	if(!(iButtons & IN_ATTACK3))
+		return;
 
-    if(!IsValidClient(iClient))
-        return;
+	if(!IsValidClient(iClient))
+		return;
 
-    int iWeapon = TF2_GetActiveWeapon(iClient);
+	int iWeapon = TF2_GetActiveWeapon(iClient);
 
-    if(iWeapon <= 0 || iWeapon > 2048)
-        return;
+	if(iWeapon <= 0 || iWeapon > 2048)
+		return;
 
-    if(!Weapon[iWeapon].fMaxRage)
-        return;
+	if(!Weapon[iWeapon].fMaxRage)
+		return;
 
-    static float fWarningDelay[2048];
+	static float fWarningDelay[2048];
 
-    if(Weapon[iWeapon].fPerc < 25.0)
-    {
-        if(fWarningDelay[iWeapon] >= GetGameTime())
-            return;
+	if(Weapon[iWeapon].fPerc < 25.0)
+	{
+		if(fWarningDelay[iWeapon] >= GetGameTime())
+			return;
 
-        fWarningDelay[iWeapon] = GetGameTime() + 1.0;
+		fWarningDelay[iWeapon] = GetGameTime() + 1.0;
 
-        EmitSoundToClient(iClient, sDeniedSounds[GetRandomInt(0, sizeof(sDeniedSounds) - 1)], _, _, SNDLEVEL_CAR);
+		EmitSoundToClient(iClient, sDeniedSounds[GetRandomInt(0, sizeof(sDeniedSounds) - 1)], _, _, SNDLEVEL_CAR);
 
-        return;
-    }
+		return;
+	}
 
-    fWarningDelay[iWeapon] = GetGameTime() + 1.0;
+	fWarningDelay[iWeapon] = GetGameTime() + 1.0;
 
-    // DoAnimation(iClient, 19);
+	ThrowSpell(iClient, iWeapon);
 
-    //SDK_SendWeaponAnim(iWeapon, 1754);
-
-    ThrowSpell(iClient, iWeapon);
-
-    return;
+	return;
 }
 
 public Action OnTakeDamageAlive(int iVictim, int &iAttacker, int &iInflictor, float &fDamage, int &iDamageType, int &iWeapon, float fDamageForce[3], float fDamagePosition[3], int iDamageCustom)
 {
-    if(!IsValidEntity(iVictim) || !IsValidEntity(iAttacker) || !IsValidEntity(iWeapon) || iAttacker == iVictim)
-        return Plugin_Continue;
+	if(!IsValidEntity(iVictim) || !IsValidEntity(iAttacker) || !IsValidEntity(iWeapon) || iAttacker == iVictim)
+		return Plugin_Continue;
 
-    if(!SpellEntities[iInflictor].bInternalSpell)
-        return Plugin_Continue;
+	if(!SpellEntities[iInflictor].bInternalSpell)
+		return Plugin_Continue;
 
-    int iWeaponLauncher = SpellEntities[iInflictor].iWeaponID;
+	int iWeaponLauncher = SpellEntities[iInflictor].iWeaponID;
 
-    float fDamageTemp = 0.0;
+	float fDamageTemp = 0.0;
 
-    switch(SpellEntities[iInflictor].Strength)
-    {
-        case SpellStrength_25: 
-            fDamageTemp = GetRandomFloat(Weapon[iWeaponLauncher].fDamage25Perc * 0.4, Weapon[iWeaponLauncher].fDamage25Perc);
-        case SpellStrength_50:
-            fDamageTemp = GetRandomFloat(Weapon[iWeaponLauncher].fDamage50Perc * 0.6, Weapon[iWeaponLauncher].fDamage50Perc);
-        case SpellStrength_75:
-            fDamageTemp = GetRandomFloat(Weapon[iWeaponLauncher].fDamage75Perc * 0.8, Weapon[iWeaponLauncher].fDamage75Perc);
-        case SpellStrength_100:
-            fDamageTemp = GetRandomFloat(Weapon[iWeaponLauncher].fDamage100Perc * 0.9, Weapon[iWeaponLauncher].fDamage100Perc);
-    }
+	switch(SpellEntities[iInflictor].Strength)
+	{
+		case SpellStrength_25: 
+			fDamageTemp = GetRandomFloat(Weapon[iWeaponLauncher].fDamage25Perc * 0.4, Weapon[iWeaponLauncher].fDamage25Perc);
+		case SpellStrength_50:
+			fDamageTemp = GetRandomFloat(Weapon[iWeaponLauncher].fDamage50Perc * 0.6, Weapon[iWeaponLauncher].fDamage50Perc);
+		case SpellStrength_75:
+			fDamageTemp = GetRandomFloat(Weapon[iWeaponLauncher].fDamage75Perc * 0.8, Weapon[iWeaponLauncher].fDamage75Perc);
+		case SpellStrength_100:
+			fDamageTemp = GetRandomFloat(Weapon[iWeaponLauncher].fDamage100Perc * 0.9, Weapon[iWeaponLauncher].fDamage100Perc);
+	}
 
-    SpellEntities[iInflictor].Destroy();
+	SpellEntities[iInflictor].Destroy();
 
-    fDamage = fDamageTemp;
-    iDamageType ^= DMG_CRIT ^ DMG_PREVENT_PHYSICS_FORCE;
+	fDamage = fDamageTemp;
+	iDamageType ^= DMG_CRIT ^ DMG_PREVENT_PHYSICS_FORCE;
 
-    return Plugin_Changed;
+	return Plugin_Changed;
 }
 
 public void OnTakeDamageAlivePost(int iVictim, int iAttacker, int iInflictor, float fDamage, int iDamageType, int iWeapon, const float fDamageForce[3], const float fDamagePosition[3])
 {
-    if(!IsValidEntity(iVictim) || !IsValidEntity(iAttacker) || !IsValidEntity(iWeapon) || iAttacker == iVictim)
-        return;
+	if(!IsValidEntity(iVictim) || !IsValidEntity(iAttacker) || !IsValidEntity(iWeapon) || iAttacker == iVictim)
+		return;
 
-    if(!Weapon[iWeapon].fMaxRage)
-        return;
+	if(!Weapon[iWeapon].fMaxRage)
+		return;
 
-    Weapon[iWeapon].fRage += fDamage;
+	Weapon[iWeapon].fRage += fDamage;
 
-    if(Weapon[iWeapon].fRage > Weapon[iWeapon].fMaxRage)
-        Weapon[iWeapon].fRage = Weapon[iWeapon].fMaxRage;
+	if(Weapon[iWeapon].fRage > Weapon[iWeapon].fMaxRage)
+		Weapon[iWeapon].fRage = Weapon[iWeapon].fMaxRage;
 
-    Weapon[iWeapon].fPerc = Weapon[iWeapon].CalculatePercentage();
+	Weapon[iWeapon].fPerc = Weapon[iWeapon].CalculatePercentage();
 
-    return;
+	return;
 }
 
 // ||──────────────────────────────────────────────────────────────────────────||
@@ -324,69 +297,69 @@ public void OnTakeDamageAlivePost(int iVictim, int iAttacker, int iInflictor, fl
 
 public void ThrowSpell(int iClient, int iWeapon)
 {
-    float fPercentage = Weapon[iWeapon].fPerc;
+	float fPercentage = Weapon[iWeapon].fPerc;
 
-    SpellStrengthType spellStrength = SpellStrength_None;
+	SpellStrengthType spellStrength = SpellStrength_None;
 
-    float fProjectileSpeedMult = 1.0;
+	float fProjectileSpeedMult = 1.0;
 
-    if(fPercentage >= 100.0)
-    {
-        spellStrength = SpellStrength_100;
-        fProjectileSpeedMult = 0.6;
-    }
-    else if(fPercentage >= 75.0)
-    {
-        spellStrength = SpellStrength_75;
-        fProjectileSpeedMult = 0.7;
-    }
-    else if(fPercentage >= 50.0)
-    {
-        spellStrength = SpellStrength_50;
-        fProjectileSpeedMult = 0.8;
-    }
-    else if(fPercentage >= 25.0)
-    {
-        spellStrength = SpellStrength_25;
-    }
+	if(fPercentage >= 100.0)
+	{
+		spellStrength = SpellStrength_100;
+		fProjectileSpeedMult = 0.6;
+	}
+	else if(fPercentage >= 75.0)
+	{
+		spellStrength = SpellStrength_75;
+		fProjectileSpeedMult = 0.7;
+	}
+	else if(fPercentage >= 50.0)
+	{
+		spellStrength = SpellStrength_50;
+		fProjectileSpeedMult = 0.8;
+	}
+	else if(fPercentage >= 25.0)
+	{
+		spellStrength = SpellStrength_25;
+	}
 
-    int iSpell  = CreateEntityByName("tf_projectile_spellfireball");
+	int iSpell  = CreateEntityByName("tf_projectile_spellfireball");
 
-    if(!IsValidEntity(iSpell))
-        return;
+	if(!IsValidEntity(iSpell))
+		return;
 
-    SpellEntities[iSpell].bInternalSpell =  true;
-    SpellEntities[iSpell].Strength       =  spellStrength;
-    SpellEntities[iSpell].iWeaponID      =  iWeapon;
+	SpellEntities[iSpell].bInternalSpell =  true;
+	SpellEntities[iSpell].Strength       =  spellStrength;
+	SpellEntities[iSpell].iWeaponID      =  iWeapon;
 
-    Weapon[iWeapon].fRage = 0.0;
-    Weapon[iWeapon].fPerc = 0.0;
+	Weapon[iWeapon].fRage = 0.0;
+	Weapon[iWeapon].fPerc = 0.0;
 
-    float fAng[3], fPos[3];
-    GetClientEyeAngles(iClient, fAng);
-    GetClientEyePosition(iClient, fPos);
+	float fAng[3], fPos[3];
+	GetClientEyeAngles(iClient, fAng);
+	GetClientEyePosition(iClient, fPos);
 
-    float fVel[3];
-    GetAngleVectors(fAng, fVel, NULL_VECTOR, NULL_VECTOR);
+	float fVel[3];
+	GetAngleVectors(fAng, fVel, NULL_VECTOR, NULL_VECTOR);
 
-    ScaleVector(fVel, 1000.0 * fProjectileSpeedMult);
+	ScaleVector(fVel, 1000.0 * fProjectileSpeedMult);
 
-    int iTeam = view_as<int>(TF2_GetClientTeam(iClient));
+	int iTeam = view_as<int>(TF2_GetClientTeam(iClient));
 
-    SetEntPropEnt(iSpell, Prop_Send, "m_hOwnerEntity", iClient);
-    SetEntPropEnt(iSpell, Prop_Send, "m_hLauncher", iClient);
-    SetEntProp(iSpell, Prop_Send, "m_iTeamNum", iTeam, 1);
-    SetEntProp(iSpell, Prop_Send, "m_nSkin", iTeam -2);
+	SetEntPropEnt(iSpell, Prop_Send, "m_hOwnerEntity", iClient);
+	SetEntPropEnt(iSpell, Prop_Send, "m_hLauncher", iClient);
+	SetEntProp(iSpell, Prop_Send, "m_iTeamNum", iTeam, 1);
+	SetEntProp(iSpell, Prop_Send, "m_nSkin", iTeam -2);
 
-    SetVariantInt(iTeam);
-    AcceptEntityInput(iSpell, "TeamNum", -1, -1, 0);
-    SetVariantInt(iTeam);
-    AcceptEntityInput(iSpell, "SetTeam", -1, -1, 0);
+	SetVariantInt(iTeam);
+	AcceptEntityInput(iSpell, "TeamNum", -1, -1, 0);
+	SetVariantInt(iTeam);
+	AcceptEntityInput(iSpell, "SetTeam", -1, -1, 0);
 
-    DispatchSpawn(iSpell);
-    TeleportEntity(iSpell, fPos, fAng, fVel);
+	DispatchSpawn(iSpell);
+	TeleportEntity(iSpell, fPos, fAng, fVel);
 
-    return;
+	return;
 }
 
 // ||──────────────────────────────────────────────────────────────────────────||
@@ -395,36 +368,36 @@ public void ThrowSpell(int iClient, int iWeapon)
 
 public Action OnCustomStatusHUDUpdate(int iClient, StringMap entries)
 {
-    int iActiveWeapon = TF2_GetActiveWeapon(iClient);
+	int iActiveWeapon = TF2_GetActiveWeapon(iClient);
 
-    if(!IsValidEntity(iActiveWeapon) || !Weapon[iActiveWeapon].fMaxRage)
-        return Plugin_Continue;
+	if(!IsValidEntity(iActiveWeapon) || !Weapon[iActiveWeapon].fMaxRage)
+		return Plugin_Continue;
 
-    char sHudPerc[64];
-    char sHudMeter[40];
+	char sHudPerc[64];
+	char sHudMeter[40];
 
-    int iFart = RoundToFloor(Weapon[iActiveWeapon].fPerc / 25.0);
+	int iFart = RoundToFloor(Weapon[iActiveWeapon].fPerc / 25.0);
 
-    Format(sHudMeter, sizeof(sHudMeter), "   ");
+	Format(sHudMeter, sizeof(sHudMeter), "   ");
 
-    for(int i = 0; i < iFart; i++)
-    {
-        Format(sHudMeter, sizeof(sHudMeter), "%s%s", sHudMeter, "◼");
-    }
+	for(int i = 0; i < iFart; i++)
+	{
+		Format(sHudMeter, sizeof(sHudMeter), "%s%s", sHudMeter, "◼");
+	}
 
-    int iRest = 4 - iFart;
+	int iRest = 4 - iFart;
 
-    for(int i = 0; i < iRest; i++)
-    {
-        Format(sHudMeter, sizeof(sHudMeter), "%s%s", sHudMeter, "◻");
-    }
+	for(int i = 0; i < iRest; i++)
+	{
+		Format(sHudMeter, sizeof(sHudMeter), "%s%s", sHudMeter, "◻");
+	}
 
-    Format(sHudPerc, sizeof(sHudPerc), "Spell: %0.f%%", Weapon[iActiveWeapon].fPerc);
+	Format(sHudPerc, sizeof(sHudPerc), "Spell: %0.f%%", Weapon[iActiveWeapon].fPerc);
 
-    entries.SetString("ca_fireballspell_perc", sHudPerc);
-    entries.SetString("ca_fireballspell_meter", sHudMeter);
+	entries.SetString("ca_fireballspell_perc", sHudPerc);
+	entries.SetString("ca_fireballspell_meter", sHudMeter);
 
-    return Plugin_Changed;
+	return Plugin_Changed;
 }
 
 // ||──────────────────────────────────────────────────────────────────────────||
@@ -433,40 +406,25 @@ public Action OnCustomStatusHUDUpdate(int iClient, StringMap entries)
 
 stock bool IsValidClient(int client)
 {
-    if(client<=0 || client>MaxClients)
-    {
-        return false;
-    }
+	if(client<=0 || client>MaxClients)
+	{
+		return false;
+	}
 
-    if(!IsClientInGame(client))
-    {
-        return false;
-    }
+	if(!IsClientInGame(client))
+	{
+		return false;
+	}
 
-    if(GetEntProp(client, Prop_Send, "m_bIsCoaching"))
-    {
-        return false;
-    }
-    
-    return true;
+	if(GetEntProp(client, Prop_Send, "m_bIsCoaching"))
+	{
+		return false;
+	}
+	
+	return true;
 }
 
 stock int TF2_GetActiveWeapon(int iClient)
 {
-    return GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon");
+	return GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon");
 }
-
-/*
-stock void DoAnimation(int iClient, int iEvent, int nData = 0)
-{
-    SDKCall(hDoAnimation, iClient, iEvent, nData);
-
-    return;
-}
-
-void SDK_SendWeaponAnim(int weapon, int anim)
-{
-    if (g_hSDKSendWeaponAnim != null)
-        SDKCall(g_hSDKSendWeaponAnim, weapon, anim);
-}
-*/
