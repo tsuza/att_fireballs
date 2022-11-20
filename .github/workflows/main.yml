@@ -32,6 +32,7 @@ jobs:
           cd stocksoup
 
           wget "https://raw.githubusercontent.com/nosoop/stocksoup/master/var_strings.inc"
+          wget "https://raw.githubusercontent.com/nosoop/stocksoup/master/string.inc"
           
           cd ../../..
 
