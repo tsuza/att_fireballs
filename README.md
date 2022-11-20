@@ -1,7 +1,7 @@
 <div align="center">
   <h1><code>att_fireballs</code></h1>
   <p>
-    <strong>Short Description</strong>
+    <strong>Throw fireballs at your enemies after filling up your charge meter.</strong>
   </p>
   <p style="margin-bottom: 0.5ex;">
     <img
