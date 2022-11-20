@@ -3,22 +3,20 @@
 #include <tf2>
 #include <tf2_stocks>
 
+#include <sdkhooks>
+
 #include <tf_custom_attributes>
-#include <tf2wearables>
 
 #include <stocksoup/var_strings>
-
-#include <sdkhooks>
-#include <sdktools>
 
 #pragma semicolon 1
 #pragma newdecls required
 
 #define PLUGIN_NAME         "[CA] Fire Magic Spells Rage"
 #define PLUGIN_AUTHOR       "Zabaniya001"
-#define PLUGIN_DESCRIPTION  "Hello darling. This plugin uses Nosoop's Custom Attributes framework. This Custom Attribute lets, once you reach enough rage, utilize fire spells ( damage depends on how much rage you have )."
-#define PLUGIN_VERSION      "1.0.0"
-#define PLUGIN_URL          "https://alliedmods.net"
+#define PLUGIN_DESCRIPTION  "This plugin uses Nosoop's Custom Attributes framework. This Custom Attribute lets, once you reach enough rage, utilize fire spells ( damage depends on how much rage you have )."
+#define PLUGIN_VERSION      "1.1.0"
+#define PLUGIN_URL          "https://github.com/Zabaniya001/att_fireballs"
 
 public Plugin myinfo = {
 	name        =   PLUGIN_NAME,
@@ -115,13 +113,16 @@ static const char sDeniedSounds[][] =
 
 public void OnPluginStart() 
 {
+	// Events
 	HookEvent("post_inventory_application", Event_OnPostInventoryApplication);
 
 	// In case of late load.
 	for(int iClient = 1; iClient <= MaxClients; iClient++)
 	{
-		if(IsClientInGame(iClient))
-			OnClientPutInServer(iClient);
+		if(!IsClientInGame(iClient))
+			continue;
+
+		OnClientPutInServer(iClient);
 	}
 	
 	return;
@@ -187,12 +188,15 @@ public void Event_OnPostInventoryApplication(Event event, const char[] name, boo
 	if(!IsValidClient(iClient))
 		return;
 
-	for(eTF2LoadoutSlot eSlot = TF2LoadoutSlot_Primary; eSlot < TF2LoadoutSlot_Misc3; eSlot++)
+	for(int iSlot = 0; iSlot < 10; iSlot++)
 	{
-		int iWeapon = TF2_GetPlayerLoadoutSlot(iClient, eSlot);
+		int iWeapon = GetPlayerWeaponSlot(iClient, iSlot);
 
 		if(!IsValidEntity(iWeapon))
 			continue;
+		
+		// This is to reset the %.
+		Weapon[iWeapon].Destroy();
 
 		char sAttributes[140];
 		if(!TF2CustAttr_GetString(iWeapon, "fire wizard spells rage", sAttributes, sizeof(sAttributes)))
@@ -249,23 +253,30 @@ public Action OnTakeDamageAlive(int iVictim, int &iAttacker, int &iInflictor, fl
 	if(!SpellEntities[iInflictor].bInternalSpell)
 		return Plugin_Continue;
 
-	int iWeaponLauncher = SpellEntities[iInflictor].iWeaponID;
+	int iWeaponLauncher = EntRefToEntIndex(SpellEntities[iInflictor].iWeaponID);
+
+	if(iWeapon != iWeaponLauncher)
+		return Plugin_Continue;
+
+	// The fireball deals damage twice.
+	// First time in ::Explode, where it deals blast damage ( ~ 10.0 dmg ).
+	// Second time in ::ExplodeEffectOnTarget, where it deals a constant DMG_Burn 100.0 dmg.
+	if(iDamageType & DMG_BLAST)
+		return Plugin_Continue;
 
 	float fDamageTemp = 0.0;
 
 	switch(SpellEntities[iInflictor].Strength)
 	{
 		case SpellStrength_25: 
-			fDamageTemp = GetRandomFloat(Weapon[iWeaponLauncher].fDamage25Perc * 0.4, Weapon[iWeaponLauncher].fDamage25Perc);
+			fDamageTemp = GetRandomFloat(Weapon[iWeapon].fDamage25Perc * 0.4, Weapon[iWeapon].fDamage25Perc);
 		case SpellStrength_50:
-			fDamageTemp = GetRandomFloat(Weapon[iWeaponLauncher].fDamage50Perc * 0.6, Weapon[iWeaponLauncher].fDamage50Perc);
+			fDamageTemp = GetRandomFloat(Weapon[iWeapon].fDamage50Perc * 0.6, Weapon[iWeapon].fDamage50Perc);
 		case SpellStrength_75:
-			fDamageTemp = GetRandomFloat(Weapon[iWeaponLauncher].fDamage75Perc * 0.8, Weapon[iWeaponLauncher].fDamage75Perc);
+			fDamageTemp = GetRandomFloat(Weapon[iWeapon].fDamage75Perc * 0.8, Weapon[iWeapon].fDamage75Perc);
 		case SpellStrength_100:
-			fDamageTemp = GetRandomFloat(Weapon[iWeaponLauncher].fDamage100Perc * 0.9, Weapon[iWeaponLauncher].fDamage100Perc);
+			fDamageTemp = GetRandomFloat(Weapon[iWeapon].fDamage100Perc * 0.9, Weapon[iWeapon].fDamage100Perc);
 	}
-
-	SpellEntities[iInflictor].Destroy();
 
 	fDamage = fDamageTemp;
 	iDamageType ^= DMG_CRIT ^ DMG_PREVENT_PHYSICS_FORCE;
@@ -273,9 +284,14 @@ public Action OnTakeDamageAlive(int iVictim, int &iAttacker, int &iInflictor, fl
 	return Plugin_Changed;
 }
 
-public void OnTakeDamageAlivePost(int iVictim, int iAttacker, int iInflictor, float fDamage, int iDamageType, int iWeapon, const float fDamageForce[3], const float fDamagePosition[3])
+public void OnTakeDamageAlivePost(int iVictim, int iAttacker, int iInflictor, float fDamage, int iDamageType, int iWeapon, const float fDamageForce[3], const float fDamagePosition[3], int damagecustom)
 {
 	if(!IsValidEntity(iVictim) || !IsValidEntity(iAttacker) || !IsValidEntity(iWeapon) || iAttacker == iVictim)
+		return;
+
+	// We do not want our fireball to auto-charge the counter, otherwise it'd have infinite sustain
+	// ( as long as you can hit the enemy ).
+	if(SpellEntities[iInflictor].bInternalSpell)
 		return;
 
 	if(!Weapon[iWeapon].fMaxRage)
@@ -330,7 +346,7 @@ public void ThrowSpell(int iClient, int iWeapon)
 
 	SpellEntities[iSpell].bInternalSpell =  true;
 	SpellEntities[iSpell].Strength       =  spellStrength;
-	SpellEntities[iSpell].iWeaponID      =  iWeapon;
+	SpellEntities[iSpell].iWeaponID      =  EntIndexToEntRef(iWeapon);
 
 	Weapon[iWeapon].fRage = 0.0;
 	Weapon[iWeapon].fPerc = 0.0;
@@ -347,16 +363,17 @@ public void ThrowSpell(int iClient, int iWeapon)
 	int iTeam = view_as<int>(TF2_GetClientTeam(iClient));
 
 	SetEntPropEnt(iSpell, Prop_Send, "m_hOwnerEntity", iClient);
-	SetEntPropEnt(iSpell, Prop_Send, "m_hLauncher", iClient);
+	SetEntPropEnt(iSpell, Prop_Send, "m_hLauncher", iWeapon);
 	SetEntProp(iSpell, Prop_Send, "m_iTeamNum", iTeam, 1);
 	SetEntProp(iSpell, Prop_Send, "m_nSkin", iTeam -2);
 
 	SetVariantInt(iTeam);
-	AcceptEntityInput(iSpell, "TeamNum", -1, -1, 0);
+	AcceptEntityInput(iSpell, "TeamNum");
 	SetVariantInt(iTeam);
-	AcceptEntityInput(iSpell, "SetTeam", -1, -1, 0);
+	AcceptEntityInput(iSpell, "SetTeam");
 
 	DispatchSpawn(iSpell);
+
 	TeleportEntity(iSpell, fPos, fAng, fVel);
 
 	return;
@@ -406,20 +423,11 @@ public Action OnCustomStatusHUDUpdate(int iClient, StringMap entries)
 
 stock bool IsValidClient(int client)
 {
-	if(client<=0 || client>MaxClients)
-	{
+	if(client <= 0 || client > MaxClients)
 		return false;
-	}
 
 	if(!IsClientInGame(client))
-	{
 		return false;
-	}
-
-	if(GetEntProp(client, Prop_Send, "m_bIsCoaching"))
-	{
-		return false;
-	}
 	
 	return true;
 }
